@@ -1,3 +1,4 @@
+![random_rollout2](https://github.com/Senich17/Garpix-practice/assets/131812061/acc0087e-1881-46de-982b-2c9048820206)
 # Garpix-practice
 # Классификация наборов грузов для укладки в грузовой контейнер
 Contains study project based on https://github.com/luisgarciar/3D-bin-packing
