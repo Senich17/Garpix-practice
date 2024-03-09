@@ -1,7 +1,8 @@
-![random_rollout2](https://github.com/Senich17/Garpix-practice/assets/131812061/acc0087e-1881-46de-982b-2c9048820206)
 # Garpix-practice
 # Классификация наборов грузов для укладки в грузовой контейнер
 Contains study project based on https://github.com/luisgarciar/3D-bin-packing
+
+![random_rollout2](https://github.com/Senich17/Garpix-practice/assets/131812061/acc0087e-1881-46de-982b-2c9048820206)
 
 Данный проект представляет собой решение задачи для преддипломной практики, в которой необходимо 
 классифицировать наборы грузов с точки зрения того, насколько плотно их удастся уложить в грузовой контейнер.
@@ -44,3 +45,7 @@ Contains study project based on https://github.com/luisgarciar/3D-bin-packing
 ## Проблемы
 
 ## Версии библиотек и окружение
+
+# Документация
+
+Документация по данному проекту расположена в файле doc.md, с полным описанием функций, а также вознаграждений, которые будут использованы для обучения RL.
