@@ -1,5 +1,5 @@
 """
-Utilities for the Bin Packing Problem
+Утилиты для решения проблемы упаковки
 """
 import random as rd
 from copy import deepcopy
@@ -12,42 +12,42 @@ from nptyping import NDArray, Int, Shape
 def boxes_generator(
     bin_size: List[int], num_items: int = 64, seed: int = 42
 ) -> List[List[int]]:
-    """Generates instances of the 2D and 3D bin packing problems
+    """Генерирует экземпляры с упаковкой 2D и 3D контейнеров
 
-    Parameters
+    Параметры
     ----------
-    num_items: int, optional
-        Number of boxes to be generated (default = 64)
-    bin_size: List[int], optional (default = [10,10,10])
-        List of length 2 or 3 with the dimensions of the container (default = (10,10,10))
-    seed: int, optional
-        seed for the random number generator (default = 42)
+    num_items: int, необязательно
+        Количество генерируемых коробок (по умолчанию = 64)
+    bin_size: List[int], необязательно (по умолчанию = [10,10,10])
+        Список длиной 2 или 3 с размерами контейнера (по умолчанию = (10,10,10))
+    seed: int, необязательно
+        seed для генератора случайных чисел (по умолчанию = 42)
 
-    Returns
+    Возвращается
     -------
     List[List[int]]
-    A list of length num_items with the dimensions of the randomly generated boxes.
+    Список элементов длины num_items с размерами случайно сгенерированных коробок.
     """
     rd.seed(seed)
 
     dim = len(bin_size)
-    # initialize the items list
+    # инициализация списка элементов
     item_sizes = [bin_size]
 
     while len(item_sizes) < num_items:
-        # choose an item randomly by its volume
+        # выбераем элемент случайным образом по его объему
         box_vols = [np.prod(np.array(box_size)) for box_size in item_sizes]
         index = rd.choices(list(range(len(item_sizes))), weights=box_vols, k=1)[0]
         box0_size = item_sizes.pop(index)
 
-        # choose an axis (x or y for 2D or x,y,z for 3D) randomly by item edge length
+        # выбор оси (x или y для 2D или x, y, z для 3D) случайным образом по длине ребра элемента
         axis = rd.choices(list(range(dim)), weights=box0_size, k=1)[0]
         len_edge = box0_size[axis]
         while len_edge == 1:
             axis = rd.choices(list(range(dim)), weights=box0_size, k=1)[0]
             len_edge = box0_size[axis]
 
-        # choose a splitting point along this axis
+        # выбор точки разделения вдоль этой оси
         if len_edge == 2:
             split_point = 1
         else:
@@ -55,15 +55,15 @@ def boxes_generator(
             weights = np.reciprocal(np.asarray(dist_edge_center) + 1)
             split_point = rd.choices(list(range(1, len_edge)), weights=weights, k=1)[0]
 
-        # split box0 into box1 and box2 on the split_point on the chosen axis
+        # разделение box0 на box1 и box2 в точке разделения на выбранной оси
         box1 = deepcopy(box0_size)
         box2 = deepcopy(box0_size)
         box1[axis] = split_point
         box2[axis] = len_edge - split_point
         assert (np.prod(box1) + np.prod(box2)) == np.prod(box0_size)
 
-        # rotate boxes on the longest side
-        # add boxes to the list of items
+        # поворот коробки по самой длинной стороне
+        # добавление коробки в список элементов
         # box1.sort(reverse=True)
         # box2.sort(reverse=True)
         item_sizes.extend([box1, box2])
@@ -74,21 +74,21 @@ def boxes_generator(
 def generate_vertices(
     cuboid_len_edges: NDArray, cuboid_position: NDArray
 ) -> NDArray[Shape["3, 8"], Int]:
-    """Generates the vertices of a box or container in the correct format to be plotted
+    """Генерирует вершины коробки или контейнера в правильном формате для построения графика
 
-    Parameters
+    Параметры
     ----------
-    cuboid_position: List[int]
-          List of length 3 with the coordinates of the back-bottom-left vertex of the box or container
-    cuboid_len_edges: List[int]
-        List of length 3 with the dimensions of the box or container
+    cuboid_position: list[int]
+          Список с координатами задней нижней левой вершины коробки или контейнера
+    cuboid_len_edges: list[int]
+        Список с размерами коробки или контейнера
 
-    Returns
+    Возвращается
     -------
     np.nd.array(np.int32)
-    An array of shape (3,8) with the coordinates of the vertices of the box or container
+    Массив формы (3,8) с координатами вершин прямоугольника или контейнера
     """
-    # Generate the list of vertices by adding the lengths of the edges to the coordinates
+    # Генерация списка вершин, добавляем длины ребер к координатам
     v0 = cuboid_position
     v0 = np.asarray(v0, dtype=np.int32)
     v1 = v0 + np.asarray([cuboid_len_edges[0], 0, 0], dtype=np.int32)
@@ -103,19 +103,19 @@ def generate_vertices(
 
 
 def interval_intersection(a: List[int], b: List[int]) -> bool:
-    """Checks if two open intervals with integer endpoints have a nonempty intersection.
+    """Проверяет, имеют ли два открытых интервала с целочисленными конечными точками непустое пересечение.
 
-    Parameters
+    Параметры
     ----------
     a: List[int]
-        List of length 2 with the start and end of the first interval
+        Список с началом и концом первого интервала
     b: List[int]
-        List of length 2 with the start and end of the second interval
+        Список с началом и концом второго интервала
 
-    Returns
+    Возвращается
     -------
-    bool
-    True if the intervals intersect, False otherwise
+    тип bool
+    True, если интервалы пересекаются, False в противном случае
     """
     assert a[1] > a[0], "a[1] must be greater than a[0]"
     assert b[1] > b[0], "b[1] must be greater than b[0]"
@@ -123,27 +123,27 @@ def interval_intersection(a: List[int], b: List[int]) -> bool:
 
 
 def cuboids_intersection(cuboid_a: List[int], cuboid_b: List[int]) -> bool:
-    """Checks if two cuboids have an intersection.
+    """Проверяет, пересекаются ли два куба.
 
-    Parameters
+    Параметры
     ----------
     cuboid_a: List[int]
-        List of length 6 [x_min_a, y_mina, z_min_a, x_max_a, y_max_a, z_max_a]
-        with the start and end coordinates of the first cuboid in each axis
+        Список [x_min_a, y_min, z_min_a, x_max_a, y_max_a, z_max_a]
+        с координатами начала и конца первого куба на каждой оси
 
-    cuboid_b: List[int]
-        List of length 6 [x_min_b, y_min_b, z_min_b, x_max_b, y_max_b, z_max_b]
-        with the start and end coordinates of the second cuboid in each axis
+    cuboid_a: List[int]
+        Список [x_min_b, y_min_b, z_min_b, x_max_b, y_max_b, z_max_b]
+        с начальными и конечными координатами второго куба на каждой оси
 
-    Returns
+    Возвращается
     -------
-    bool
-    True if the cuboids intersect, False otherwise
+    тип bool
+    True, если кубоиды пересекаются, False в противном случае
     """
     assert len(cuboid_a) == 6, "cuboid_a must be a list of length 6"
     assert len(cuboid_b) == 6, "cuboid_b must be a list of length 6"
 
-    # Check the coordinates of the back-bottom-left vertex of the first cuboid
+    # Проверка координаты задней нижней левой вершины первого куба
     assert np.all(
         np.less_equal([0, 0, 0], cuboid_a[:3])
     ), "cuboid_a must have nonnegative coordinates"
@@ -169,19 +169,19 @@ def cuboids_intersection(cuboid_a: List[int], cuboid_b: List[int]) -> bool:
 
 
 def cuboid_fits(cuboid_a: List[int], cuboid_b: List[int]) -> bool:
-    """Checks if cuboid_b fits into cuboid_a.
-    Parameters
+    """Проверяет, вписывается ли cuboid_b в cuboid_a.
+    Параметры
     ----------
     cuboid_a: List[int]
-        List of length 6 [x_min_a, y_mina, z_min_a, x_max_a, y_max_a, z_max_a]
-        with the start and end coordinates of the first cuboid in each axis
+        Список [x_min_a, y_min, z_min_a, x_max_a, y_max_a, z_max_a]
+        с координатами начала и конца первого куба на каждой оси
     cuboid_b: List[int]
-        List of length 6 [x_min_b, y_min_b, z_min_b, x_max_b, y_max_b, z_max_b]
-        with the start and end coordinates of the second cuboid in each axis
-    Returns
+        Список [x_min_b, y_min_b, z_min_b, x_max_b, y_max_b, z_max_b]
+        с координатами начала и конца второго куба на каждой оси
+    Возвращается
     -------
-    bool
-    True if the cuboid_b fits into cuboid_a, False otherwise
+    тип bool
+    True, если cuboid_b вписывается в cuboid_a, False в противном случае
     """
     assert len(cuboid_a) == 6, "cuboid_a must be a list of length 3"
     assert len(cuboid_b) == 6, "cuboid_b must be a list of length 3"
@@ -189,7 +189,7 @@ def cuboid_fits(cuboid_a: List[int], cuboid_b: List[int]) -> bool:
     assert len(cuboid_a) == 6, "cuboid_a must be a list of length 6"
     assert len(cuboid_b) == 6, "cuboid_b must be a list of length 6"
 
-    # Check the coordinates of the back-bottom-left vertex of the first cuboid
+
     assert np.all(
         np.less_equal([0, 0, 0], cuboid_a[:3])
     ), "cuboid_a must have non-negative coordinates"
@@ -205,7 +205,7 @@ def cuboid_fits(cuboid_a: List[int], cuboid_b: List[int]) -> bool:
         np.less(cuboid_b[:3], cuboid_b[3:])
     ), "cuboid_b must have non-zero volume"
 
-    # Check if the cuboid b fits into the cuboid a
+    # Проверка, вписывается ли cuboid_b в cuboid_a
     return np.all(np.less_equal(cuboid_a[:3], cuboid_b[:3])) and np.all(
         np.less_equal(cuboid_b[3:], cuboid_a[3:])
     )
