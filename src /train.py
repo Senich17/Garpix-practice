@@ -21,16 +21,16 @@ def make_env(
     only_terminal_reward=False,
 ):
     """
-    Parameters
+    Параметры
 
     ----------
-    container_size: size of the container
-    num_boxes: number of boxes to be packed
-    num_visible_boxes: number of boxes visible to the agent
-    seed: seed for RNG
-    render_mode: render mode for the environment
-    random_boxes: whether to use random boxes or not
-    only_terminal_reward: whether to use only terminal reward or not
+    container_size: размер контейнера
+    num_boxes: количество упаковываемых ящиков 
+    num_visible_boxes: количество ящиков, видимых агенту
+    seed: начальное значение для RNG
+    render_mode: режим рендеринга для среды
+    random_boxes: использовать ли случайные коробки или нет
+    only_terminal_reward: использовать ли только конечное вознаграждение или нет
     """
     env = gym.make(
         "PackingEnv-v0",
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     print("done packing")
     env.close()
 
-## Save gif
+## сохраняем гифку
     figs[0].save('../gifs/train_5_boxes.gif', format='GIF',
                    append_images=figs[1:],
                    save_all=True,
