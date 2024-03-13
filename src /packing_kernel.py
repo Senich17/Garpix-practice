@@ -1,10 +1,9 @@
-"""
-Packing Engine: Basic Classes for the Bin Packing Problem
-We follow the space representation depicted below, all coordinates and lengths of boxes and containers are integers.
+"""Механизм упаковки: Базовые классы для задачи упаковки
+Мы следуем пространственному представлению, показанному ниже, все координаты и длины коробок и контейнеров являются целыми числами.
 
-    x: depth
-    y: length
-    z: height
+    x: глубина
+    y: длина
+    z: высота
 
        Z
        |
@@ -14,9 +13,9 @@ We follow the space representation depicted below, all coordinates and lengths o
      /
     X
 
-    Classes:
-        Box
-        Container
+    классы:
+        коробка
+        контейнер
 
 """
 from copy import deepcopy
@@ -36,33 +35,33 @@ from src.utils import (
 
 
 class Box:
-    """A class to represent a 3D box
+    """Класс трехмерной коробки
 
-    Attributes
+    Атрибуты
     ----------
      id_: int
-           id of the box
+          идентификатор коробки
      position: int
-           Coordinates of the position of the bottom-leftmost-deepest corner of the box
+          Координаты положения самого нижнего левого глубокого угла коробки
      size: int
-           Lengths of the edges of the box
+          длины краев коробки
     """
 
     def __init__(self, size: List[int], position: List[int], id_: int) -> None:
-        """Initializes a box object
+        """Инициализация объекта box
 
-        Parameters
+        Параметры
         ----------
         size: List[int]
-            Lengths of the edges of the box in the order (x, y, z) = (depth, length, height)
+            Длины краев прямоугольника в порядке (x, y, z) = (глубина, длина, высота)
         position: List[int]
-            Coordinates of the position of the bottom-leftmost-deepest corner of the box
+            Координаты положения самого нижнего левого и самого глубокого угла коробки
         id_: int
-            id of the box
+            идентификатор коробки
 
-        Returns
+        Возвращается
         -------
-        Box object
+        Коробочный объект))
         """
         assert len(size) == len(
             position
@@ -81,27 +80,27 @@ class Box:
         self.size = np.asarray(size)
 
     def rotate(self, rotation: int) -> None:
-        """Rotates the box in place
+        """Вращение коробки
 
-        Parameters
+        Параметры
         ----------
         rotation: int
         """
-        pass  # to be added later
+        pass  # потом добавим
 
     @property
     def area_bottom(self) -> int:
-        """Area of the bottom face of the box"""
+        """Площадь нижней поверхности коробки"""
         return self.size[0] * self.size[1]
 
     @property
     def volume(self) -> int:
-        """Volume of the box"""
+        """Объем коробки"""
         return self.size[0] * self.size[1] * self.size[2]
 
     @property
     def vertices(self) -> NDArray:
-        """Returns a list with the vertices of the box"""
+        """Возвращает список с вершинами коробки"""
         vert = generate_vertices(self.size, self.position)
         return np.asarray(vert, dtype=np.int32)
 
@@ -112,22 +111,22 @@ class Box:
         )
 
     def plot(self, color, figure: Type[go.Figure] = None) -> Type[go.Figure]:
-        """Adds the plot of a box to a given figure
+        """Визуализирует коробки
 
-         Parameters
+         Параметры
          ----------
         figure: go.Figure
-             A plotly figure where the box should be plotted
+             уизуализация, отображающая коробку
 
-         Returns
+         Возвращается
          -------
          go.Figure
         """
-        # Generate the coordinates of the vertices
+        # Сгенерируем координаты вершин
         vertices = generate_vertices(self.size, self.position).T
         x, y, z = vertices[0, :], vertices[1, :], vertices[2, :]
-        # The arrays i, j, k contain the indices of the triangles to be plotted (two per each face of the box)
-        # The triangles have vertices (x[i[index]], y[j[index]], z[k[index]]), index = 0,1,..7.
+        # Массивы i, j, k содержат индексы треугольников, которые будут построены (по два на каждую грань прямоугольника).
+        # Треугольники имеют вершины (x[i[индекс]], y[j[индекс]], z[k[индекс]]), индекс = 0,1,..7.
         i = [1, 2, 5, 6, 1, 4, 3, 6, 1, 7, 0, 6]
         j = [0, 3, 4, 7, 0, 5, 2, 7, 3, 5, 2, 4]
         k = [2, 1, 6, 5, 4, 1, 6, 3, 7, 1, 6, 0]
@@ -152,7 +151,7 @@ class Box:
             vert_z = np.array([z[m], z[n]])
 
         if figure is None:
-            # Plot the box faces
+            # визуализация сторон коробки
             figure = go.Figure(
                 data=[
                     go.Mesh3d(
@@ -168,7 +167,7 @@ class Box:
                     )
                 ]
             )
-            # Plot the box edges
+            # Визуализация вершин
             figure.add_trace(
                 go.Scatter3d(
                     x=vert_x,
@@ -180,7 +179,7 @@ class Box:
             )
 
         else:
-            # Plot the box faces
+            # грани
             figure.add_trace(
                 go.Mesh3d(
                     x=x,
@@ -194,7 +193,7 @@ class Box:
                     flatshading=True,
                 )
             )
-            # Plot the box edges
+            # Углы
             figure.add_trace(
                 go.Scatter3d(
                     x=vert_x,
@@ -209,21 +208,21 @@ class Box:
 
 
 class Container:
-    """A class to represent a 3D container
+    """Класс 3D-контейнера
 
-    Attributes
+    Атрибуты
     ----------
     id_: int
-        id of the container
+         идентификатор контейнера
     size: NDArray[Shape["1,3"],Int]
-        Lengths of the edges of the container
+        Длины граней контейнера
     position: NDArray[Shape["1,3"],Int]
-        Coordinates of the bottom-leftmost-deepest corner of the container
-    boxes: List[Box]
-        List with the boxes placed inside the container
+        Координаты самого нижнего левого глубокого угла контейнера
+    Box: list[Box]
+        Список с коробками, размещенными внутри контейнера
     height_map: NDArray[Shape["*,*"],Int]
-        An array of size (size[0],size[1]) representing the height map (top view) of the container,
-        where height_map[i,j] is the current height of stacked items at position (i,j).
+        Массив размера (size[0],size[1]), представляющий карту высот (вид сверху) контейнера,
+        где height_map[i,j] - текущая высота сложенных элементов в позиции (i,j).
     """
 
     def __init__(
@@ -232,16 +231,16 @@ class Container:
         position: NDArray[Shape["1,3"], Int] = None,
         id_: int = 0,
     ) -> None:
-        """Initializes a 3D container
+        """Инициализация 3D-контейнера
 
-        Parameters
+        Параметры
         ----------
-        id_: int, optional
-            id of the container (default = 0)
-        positions: int, optional
-            Coordinates of the bottom-leftmost-deepest corner of the container (default = 0,0,0)
+        id_: int, опционально
+            id контейнера (по умолчанию = 0)
+        positions: int, опционально
+            Координаты самого нижнего левого глубокого угла контейнера (по усолчанию = 0,0,0)
         size: int
-            Lengths of the edges of the container
+            Длины граней контейнера
         """
 
         if position is None:
@@ -260,27 +259,27 @@ class Container:
 
     @property
     def vertices(self):
-        """Returns a list with the vertices of the container"""
+        """Возвращаем список вершин контейнера"""
         return generate_vertices(self.size, self.position)
 
     @property
     def volume(self) -> int:
-        """Volume of the box"""
+        """Объем коробок"""
         return self.size[0] * self.size[1] * self.size[2]
 
     def reset(self):
-        """Resets the container to an empty state"""
+        """Сброс контейнера в состояние пустого"""
         self.boxes = []
         self.height_map = np.zeros(shape=[self.size[0], self.size[1]], dtype=np.int32)
 
     def _update_height_map(self, box):
-        """Updates the height map after placing a box
-         Parameters
+        """Обновляет карту высот после размещения коробки
+         Параметры
         ----------
         box: Box
-             Box to be placed inside the container
+             Коробка, помещаемая внутрь контейнера
         """
-        # Add the height of the new box in the x-y coordinates occupied by the box
+        # Добавление высоты новой коробки в координатах x-y, занимаемых этой коробкой
         self.height_map[
             box.position[0] : box.position[0] + box.size[0],
             box.position[1] : box.position[1] + box.size[1],
@@ -293,49 +292,48 @@ class Container:
         )
 
     def get_height_map(self):
-        """Returns a copy of the height map of the container"""
+        """возвращаем карту высот"""
         return deepcopy(self.height_map)
 
     def check_valid_box_placement(
         self, box: Box, new_pos: NDArray, check_area: int = 100
     ) -> int:
         """
-        Parameters
+        Параметры
         ----------
         box: Box
-            Box to be placed
+            Коробка для размещения
         new_pos: NDArray[int]
-            Coordinates of new position
-        check_area: int, default = 100
-             Percentage of area of the bottom of the box that must be supported in the new position
+            Координаты новой позиции
+        check_area: int, по умолчанию = 100
+             Процент площади нижней части поля, которая должна поддерживаться в новом положении
 
-        Returns
+        Возвращается
         -------
         int
         """
         assert len(new_pos) == 2
 
-        # Generate the vertices of the bottom face of the box
+        # Сгенерируйте вершины нижней грани коробки
         v = generate_vertices(np.asarray(box.size), np.asarray([*new_pos, 1]))
-        # bottom vertices of the box
+        # нижние вершины коробки
         v0, v1, v2, v3 = v[0, :], v[1, :], v[2, :], v[3, :]
 
-        # Generate the vertices of the bottom face of the container
+        # Сгенерируйте вершины нижней грани контейнера
         w = generate_vertices(self.size, self.position)
-        # bottom vertices of the container
+        # нижние вершины контейнера
         w0, w1, w2, w3 = w[0, :], w[1, :], w[2, :], w[3, :]
 
-        # Check if the bottom vertices of the box are inside the container
+        # Проверка, что коробка находится именно в рамках контейнера
         cond_0 = np.all(np.logical_and(v0[0:2] >= w0[0:2], v0[0:2] <= w3[0:2]))
         cond_1 = np.all(np.logical_and(v1[0:2] >= w0[0:2], v1[0:2] <= w3[0:2]))
         cond_2 = np.all(np.logical_and(v2[0:2] >= w0[0:2], v2[0:2] <= w3[0:2]))
         cond_3 = np.all(np.logical_and(v3[0:2] >= w0[0:2], v3[0:2] <= w3[0:2]))
 
-        # Check if the bottom vertices of the box are inside the container
         if not np.all([cond_0, cond_1, cond_2, cond_3]):
             return 0
 
-        # Check that the bottom vertices of the box in the new position are at the same level
+        # проверка, что нижние вершины коробки в новом положении находятся на одном уровне
         corners_levels = [
             self.height_map[v0[0], v0[1]],
             self.height_map[v1[0] - 1, v1[1]],
@@ -346,20 +344,20 @@ class Container:
         if corners_levels.count(corners_levels[0]) != len(corners_levels):
             return 0
 
-        # lev is the level (height) at which the bottom corners of the box will be located
+        # lev - это уровень (высота), на котором будут расположены нижние углы коробки
         lev = corners_levels[0]
-        # bottom_face_lev contains the levels of all the points in the bottom face
+        # bottom_face_lev содержит уровни всех точек на нижней грани
         bottom_face_lev = self.height_map[
             v0[0] : v0[0] + box.size[0], v0[1] : v0[1] + box.size[1]
         ]
 
-        # Check that the level of the corners is the maximum of all points in the bottom face
+        # Проверка, что уровень углов является максимальным из всех точек на нижней грани
         if not np.array_equal(lev, np.amax(bottom_face_lev)):
             return 0
 
-        # Count how many of the points in the bottom face are supported at height equal to lev
+        # Подсчет, сколько точек на нижней грани поддерживаются на высоте, равной lev
         count_level = np.count_nonzero(bottom_face_lev == lev)
-        # Check the percentage of box bottom area that is supported (at the height equal to lev)
+        # Проверка процента поддерживаемой площади дна коробки (на высоте, равной lev).
         support_perc = int((count_level / (box.size[0] * box.size[1])) * 100)
         if support_perc < check_area:
             return 0
@@ -367,7 +365,7 @@ class Container:
         dummy_box = deepcopy(box)
         dummy_box.position = [*new_pos, lev]
 
-        # Check that the box fits in the container in the new location
+        # Проверка, что коробка помещается в контейнер на новой позиции
         dummy_box_min_max = [
             dummy_box.position[0],
             dummy_box.position[1],
@@ -389,7 +387,7 @@ class Container:
         if not cuboid_fits(container_min_max, dummy_box_min_max):
             return 0
 
-        # Check that the box does not overlap with other boxes in the container
+        # Проверка, что нет наложения коробок друг в друга в контейнере
         for other_box in self.boxes:
             if other_box.id_ == dummy_box.id_:
                 continue
@@ -405,29 +403,29 @@ class Container:
             if cuboids_intersection(dummy_box_min_max, other_box_min_max):
                 return 0
 
-        # if all conditions are met, the position is valid
+        # если все условия выполнены, позиция является действительной
         return 1
 
     def action_mask(
         self, box: Box, check_area: int = 100
     ) -> NDArray[Shape["*, *"], Int]:
-        """Returns an array with all possible positions for a box in the container
-        array[i,j] = 1 if the box can be placed in position (i,j), 0 otherwise
+        """Возвращает массив со всеми возможными позициями для коробки в контейнере
+        array[i,j] = 1, если коробка может быть помещена в позицию (i,j), 0 в противном случае
 
-           Parameters
+           Параметры
            ----------
            box: Box
-               Box to be placed
-           check_area: int, default = 100
-                Percentage of area of the bottom of the box that must be supported in the new position
+               коробка для упаковки
+           check_area: int, по умолчанию = 100
+                Процент площади нижней части коробки, которая должна поддерживаться в новом положении
 
-           Returns
+           Возвращается
            -------
            np.array(np.int8)
         """
 
         action_mask = np.zeros(shape=[self.size[0], self.size[1]], dtype=np.int8)
-        # Generate all possible positions for the box in the container
+        # Генерируем все возможные положения коробки в контейнере
         for i in range(0, self.size[0]):
             for j in range(0, self.size[1]):
                 if (
@@ -440,43 +438,42 @@ class Container:
         return action_mask
 
     def place_box(self, box: Box, new_position: List[int], check_area=100) -> None:
-        """Places a box in the container
-        Parameters
+        """Помещает коробку в контейнер
+        Параметры
         ----------
         box: Box
-            Box to be placed
+            Поле для размещения
         new_position: List[int]
-            Coordinates of new position
+            Координаты новой позиции
         check_area:
-
         """
         assert (
             self.check_valid_box_placement(box, new_position, check_area) == 1
         ), "Invalid position for box"
-        # Check height_map to find the height at which the box will be placed
+        # проверить height_map, чтобы определить высоту, на которой будет размещена коробка
         height = self.height_map[new_position[0], new_position[1]]
-        # Update the box position
+        # Обновление позиции коробки
         box.position = np.asarray([*new_position, height], dtype=np.int32)
-        # Add the box to the container
+        # Добавляем коробку в контейнеор
         self.boxes.append(box)
-        # Update the height_map
+        # Обновляем height_map
         self._update_height_map(box)
 
     def plot(self, figure: Type[go.Figure] = None) -> Type[go.Figure]:
-        """Adds the plot of a container with its boxes to a given figure
+        """Добавляет визуализацию
 
-        Parameters
+        Параметры
         ----------
-        figure: go.Figure, default = None
-            A plotly figure where the box should be plotted
-        Returns
+        figure: go.Figure, по умолчанию = None
+         Поле где должна быть отрисована коробка
+        Возвращается
         -------
             go.Figure
         """
         if figure is None:
             figure = go.Figure()
 
-        # Generate all vertices and edge pairs, the numbering is explained in the function utils.generate_vertices
+        # Генерируем все вершины и пары ребер, нумерация которых объяснена в функции utils.generate_vertices
         vertices = generate_vertices(self.size, self.position).T
         x, y, z = vertices[0, :], vertices[1, :], vertices[2, :]
         edge_pairs = [
@@ -494,7 +491,7 @@ class Container:
             (6, 7),
         ]
 
-        # Add a line between each pair of edges to the figure
+        # Добавляем линию между каждой парой ребер
         for (m, n) in edge_pairs:
             vert_x = np.array([x[m], x[n]])
             vert_y = np.array([y[m], y[n]])
@@ -516,7 +513,7 @@ class Container:
             item_color = color_list[(item.volume + item.id_) % len(color_list)]
             figure = item.plot(item_color, figure)
 
-        # Choose the visualization angle
+        # Выбор угла для визуализации
         # camera = dict(eye=dict(x=2, y=2, z=0.1))
 
         camera = dict(
@@ -525,7 +522,7 @@ class Container:
             eye=dict(x=1.25, y=1.25, z=1.25),
         )
 
-        # Update figure properties for improved visualization
+        
         figure.update_layout(
             showlegend=False,
             scene_camera=camera,
@@ -560,30 +557,30 @@ class Container:
         return figure
 
     def first_fit_decreasing(self, boxes: List[Box], check_area: int = 100) -> None:
-        """Places all boxes in the container using the first fit decreasing heuristic method
-        Parameters
+        """Помещает все ящики в контейнер, используя параметры эвристического метода уменьшения первого соответствия
+
         ----------
         boxes: List[Box]
-            List of boxes to be placed
-        check_area: int, default = 100
-            Percentage of area of the bottom of the box that must be supported in the new position
+            Список ящиков для размещения
+        check_area: int, по умолчанию = 100
+            Процент площади нижней части ящика, которая должна поддерживаться в новом положении
         """
-        # Sort the boxes in the decreasing order of their volume
+        # Сортировка коробок в порядке убывания их объема
         boxes.sort(key=lambda x: x.volume, reverse=True)
 
         for box in boxes:
-            # Find the positions where the box can be placed
+            # Найти позицию для размещения коробки
             action_mask = self.action_mask(box, check_area)
 
-            # top lev is the maximum level where the box can be placed
-            # according to its height
+            # top lev максимальный уровень, где возможно размещение коробки
+            # в соответствии с ее высотой
             top_lev = self.size[2] - box.size[2]
-            # max_occupied is the maximum height occupied by a box in the container
+            # max_occupied максимальныя высота, которую занимает коробка
             max_occupied = np.max(self.height_map)
             lev = min(top_lev, max_occupied)
 
-            # We find the first position where the box can be placed starting from
-            # the top level and going down
+            # Находим первую позицию, куда можно поместить коробку, начиная с
+            # верхнего уровня и спускаясь вниз
             k = lev
             while k >= 0:
                 locations = np.zeros(shape=(self.size[0], self.size[1]), dtype=np.int32)
@@ -592,12 +589,12 @@ class Container:
                 )
                 if kth_level.any():
                     locations[kth_level] = 1
-                    # Find the first position where the box can be placed
+                    # Находим первую позицию для размещения коробки
                     position = [
                         np.nonzero(locations == 1)[0][0],
                         np.nonzero(locations == 1)[1][0],
                     ]
-                    # Place the box in the first position found
+                    # Размещение коробки на первой найденной позиции
                     self.place_box(box, position, check_area)
                     break
                 k -= 1
@@ -605,15 +602,15 @@ class Container:
 
 if __name__ == "__main__":
     len_bin_edges = [10, 10, 10]
-    # The boxes generated will fit exactly in a container of size [10,10,10]
+    # Сгенерированные коробки точно поместятся в контейнер размера [10,10,10]
     boxes_sizes = boxes_generator(len_bin_edges, num_items=64, seed=42)
     boxes = [
         Box(size, position=[-1, -1, -1], id_=i) for i, size in enumerate(boxes_sizes)
     ]
-    # We pack the boxes in a bigger container since the heuristic rule is not optimal
+    # Мы упаковываем коробки в контейнер большего размера, поскольку эвристическое правило не является оптимальным
     container = Container(np.array([12, 12, 12], dtype=np.int32))
-    # The parameter 'check_area' gives the percentage of the bottom area of the box that must be supported
+    # Параметр 'check_area' указывает процент от нижней области поля, который должен поддерживаться
     container.first_fit_decreasing(boxes, check_area=100)
-    # show plot
+    # визуалищируем
     fig = container.plot()
     fig.show()
