@@ -1,25 +1,25 @@
-Definition of the State and Action Spaces and the Reward Function
+Определение пространств состояний и действий и функции вознаграждения
 
-We assume that our environment has a container of size len_edges = (lx,ly,lz) where each entry is the length of the container in the corresponding coordinate axis. For simplicity, we only consider the case of a container that is loaded from the top.
+Мы предполагаем, что в нашей среде есть контейнер размером len_edges = (lx,ly,lz), где каждая запись представляет собой длину контейнера на соответствующей оси координат. Для простоты мы рассматриваем только случай контейнера, который загружается сверху.
 
-In addition, we assume that only a number num_incoming_boxes of boxes is visible to the agent, with their corresponding sizes stored in an array box_sizes. The agent should choose a box and its position to be packed.
+Кроме того, мы предполагаем, что агенту видно только количество num_incoming_boxes ящиков, соответствующие размеры которых хранятся в массиве box_sizes. Агент должен выбрать коробку и ее местоположение для упаковки.
 
-State Space
+Пространство состояний
 
-We use a dictionary state observation_space with keys height_map and incoming_box_sizes to store the state of the environment.
+Мы используем словарь state observation_space с ключами height_map и incoming_box_sizes для хранения состояния среды.
 
-The two-dimensional array contained in the key height_map has shape (lx,ly) and represents the top view of the container, where height_map[i,j] is the maximum height of a box occupying any point of the form  in the container, or  if no box occupies this point. The height map is an object of type spaces.MultiDiscrete with shape (lx,ly) and containing integers in the range [0,z).
+Двумерный массив, содержащийся в ключе height_map, имеет форму (lx,ly) и представляет вид контейнера сверху, где height_map[i,j] - это максимальная высота прямоугольника, занимающего любую точку формы в контейнере. Карта высот является объектом типа spaces. Многодискретный с формой (lx,ly) и содержащий целые числа в диапазоне [0,z).
 
-The array contained in the incoming_box_sizes key is an object of type spaces.MultiDiscrete with shape (num_incoming_boxes,3) and contains the sizes of the boxes to be packed.
+Массив, содержащийся в ключе incoming_box_sizes, является объектом типа spaces. Многодискретный с формой (num_incoming_boxes,3) и содержит размеры упаковываемых ящиков.
 
-Action Space
+Пространство действий
 
-For the action space, we will use a dictionary action_space with keys box_index and position to store the action.
+Для пространства действий мы будем использовать словарь action_space с ключами box_index и position для хранения действия.
 
-The box_index key is an object of type spaces.Discrete containing integer values in [0,num_incoming_boxes). The two-dimensional array stored in the key position represents the position of the box to be packed. Note that only two coordinates are specified, because when the agent places a box in the position (i,j) the bottom-leftmost-back corner of the box will be at position (i,j,k), where the value k of the third coordinate is chosen automatically, that is, the box is either placed on an already existing box at this position or on the bottom of the container.
+Ключ box_index является объектом типа spaces. Дискретный, содержащий целочисленные значения в [0,num_incoming_boxes). Двумерный массив, хранящийся в позиции ключа, представляет позицию коробки, подлежащей упаковке. Обратите внимание, что указаны только две координаты, потому что, когда агент помещает поле в положение (i,j), крайний нижний левый угол поля будет находиться в положении (i,j,k), где значение k третьей координаты выбирается автоматически, то есть коробка устанавливается либо на уже существующую коробку в этом положении, либо на дно контейнера.
 
-We assume for the moment that the agent can only place a box at position (i,j) if the bottom face of the box is completely supported (no empty space below the box) and that no box can be placed below an existing box. We automatically check all the feasible locations satisfying these conditions for a given box.
+На данный момент мы предполагаем, что агент может поместить коробку в положение (i,j) только в том случае, если нижняя грань коробки полностью поддерживается (под коробкой нет пустого пространства) и что никакая коробка не может быть помещена под существующую коробку. Мы автоматически проверяем все возможные местоположения, удовлетворяющие этим условиям для данной коробки.
 
-Reward Function
+Функция вознаграждения
 
-The reward function given at the agent at the end of each step will be determined by how tight are the boxes packed in the container. We are still investigating how to measure this.
+Функция вознаграждения, предоставляемая агенту в конце каждого шага, будет определяться тем, насколько плотно коробки упакованы в контейнер. Мы все еще изучаем, как это измерить.
