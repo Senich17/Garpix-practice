@@ -25,8 +25,8 @@ def make_env(
     only_terminal_reward=False,
 ) -> gym.Env:
     """
-    Utility function for building environments for the bin packing problem.
-    Parameters
+    Полезная функция для создания среды для решения проблемы упаковки.
+    Параметры
     ----------
     container_size
     num_boxes
@@ -36,7 +36,7 @@ def make_env(
     random_boxes
     only_terminal_reward
 
-    Returns
+    Возвращается
     -------
 
     """
@@ -54,10 +54,10 @@ def make_env(
 
 
 if __name__ == "__main__":
-    # Ignore plotly and gym deprecation warnings
+    # Игнорируем plotly и gym предупреждения
 
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    # Environment initialization
+    # Инициализация среды
     container_size = [5, 5, 5]
     num_boxes = 10
     num_visible_boxes = 10
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     print("finished initialization of vectorized environment")
     print("beginning training")
 
-    # MaskablePPO initialization
+    # Инициализация MaskablePPO
     model = MaskablePPO(
         "MultiInputPolicy", env, gamma=0.4, verbose=1, tensorboard_log="../logs"
     )
