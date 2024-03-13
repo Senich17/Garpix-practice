@@ -1,16 +1,16 @@
-""" Basic agents for 3D packing problems."""
+""" Основной агент для решения задач трехмерной упаковки."""
 
 from typing import Dict
 
 
 def rnd_agent(observation: Dict) -> Dict:
-    """Random agent for the packing environment.
+    """Рандомный агент для среды упаковки.
 
-    Args:
-        observation (dict): Environment observation.
+    Аргументы:
+        observation (dict): Наблюдение за средой.
 
-    Returns:
-        action (dict): Action to be taken.
+    Возвращается:
+        action (dict): Действие, которое необходимо предпринять.
     """
     action = {"position": [0, 0], "box_index": 0}
     return action
