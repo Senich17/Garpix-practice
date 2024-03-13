@@ -21,16 +21,16 @@ def make_env(
     only_terminal_reward=False,
 ):
     """
-    Parameters
+    Параметры
 
     ----------
-    container_size: size of the container
-    num_boxes: number of boxes to be packed
-    num_visible_boxes: number of boxes visible to the agent
-    seed: seed for RNG
-    render_mode: render mode for the environment
-    random_boxes: whether to use random boxes or not
-    only_terminal_reward: whether to use only terminal reward or not
+    container_size: размер грузового пространства
+    num_boxes: количество коробок для загрузки
+    num_visible_boxes: количество коробок, которые видит агент
+    seed
+    render_mode: режим рендеринга для среды
+    random_boxes: использрвать ли рандомные коробки
+    only_terminal_reward: использовать ли только терминальное вознаграждение или нет
     """
     env = gym.make(
         "PackingEnv-v0",
