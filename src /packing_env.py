@@ -1,10 +1,10 @@
 """
-Packing Gym: An OpenAI Gym environment for 3D packing problems.
-We follow the space representation depicted below, all coordinates and lengths of boxes and containers are integers.
+Packing Gym: Открытая среда для решения задач трехмерной упаковки.
+Мы следуем пространственному представлению, показанному ниже, все координаты и длины коробок и контейнеров являются целыми числами.
 
-    x: depth
-    y: length
-    z: height
+    x: глубина
+    y: длинна
+    z: высота
 
        Z
        |
@@ -14,9 +14,9 @@ We follow the space representation depicted below, all coordinates and lengths o
      /
     X
 
-    Classes:
-        Box
-        Container
+    Классы:
+        Коробка
+        Контейнер
 
 """
 import copy
@@ -33,47 +33,34 @@ from src.packing_kernel import Box, Container
 
 
 class PackingEnv(gym.Env):
-    """A class to represent the packing environment.
+    """Класс представляющий среду упаковки.
 
-    Description:
-        The environment consists of a 3D container and an initial list of 3D boxes, the goal
-        is to pack the boxes into the container minimizing the empty space. We assume
-        that the container is loaded from the top.
+    Описание:
+        Среда состоит из 3D-контейнера и начального списка 3D-ящиков, цель
+        состоит в том, чтобы упаковать коробки в контейнер, минимизируя пустое пространство. Мы предполагаем
+        что контейнер загружается сверху.
 
-        The state of the container is represented by a 2D array storing the height map (top view)
-        of the container (see the documentation of packing_engine.Container.height_map
-        for a detailed explanation) and a list of sizes of the upcoming boxes.
+        Состояние контейнера представлено двумерным массивом, хранящим карту высот (вид сверху)
+        контейнера и список размеров предстоящих коробок.
+        
+        Действие:
+        Тип: Дискретный(container.size[0]*container.size[1]*num_visible_boxes)
+        Агент выбирает целое число j в диапазоне [0, container.size[0]*container.size[1]*num_visible_boxes)),
+        и действие интерпретируется следующим образом: поле с индексом j // (container.size[0]*container.size[1])
+        помещается в положение (x,y) = (j//container.size[1], j%container.size[1]) в контейнере.
 
-        Observation:
-        Type:  Dict(2)
+        Награда:
+        В конце эпохи агенту выдается вознаграждение, равное соотношению между объемом
+        из упакованных коробок и объема контейнера.
 
-        Key             Description                       Shape - Type:int                       (Min,Max) - Type:int
-        height_map      Top view of the container         (container.size[0],container.size[1])  (0,container.size[2])
-                        with heights of boxes already
-                        placed
-                        Type: MultiDiscrete
+        Начальное состояние:
+        height_map инициализируется как нулевой массив, а список предстоящих блоков инициализируется как случайный список
+        num_visible_boxes длины из полного списка блоков.
 
-        box_sizes       Array with sizes of the upcoming   (num_upcoming_boxes, 3)               (1, container.size[2])
-                        boxes
+        Завершение эпохи:
+        Эпоха завершается, когда все коробки помещаются в контейнер или когда больше нельзя упаковать коробки
+        в контейнер.
 
-
-        Action:
-        Type:  Discrete(container.size[0]*container.size[1]*num_visible_boxes)
-        The agent chooses an integer j in the range [0, container.size[0]*container.size[1]*num_visible_boxes)),
-        and the action is interpreted as follows: the box with index  j // (container.size[0]*container.size[1])
-        is placed in the position (x,y) = (j//container.size[1], j%container.size[1]) in the container.
-
-        Reward:
-        At the end of the episode a reward is given to the agent, the reward equals the ratio between the volume
-        of the packed boxes and the volume of the container.
-
-        Starting State:
-        height_map is initialized as a zero array and the list of upcoming boxes is initialized as a random list of
-        length num_visible_boxes from the complete list of boxes.
-
-        Episode Termination:
-        The episode is terminated when all the boxes are placed in the container or when no more boxes can be packed
-        in the container.
     """
 
     metadata = {"render_modes": ["human", "rgb_array", "None"], "render_fps": 4}
@@ -88,26 +75,26 @@ class PackingEnv(gym.Env):
         random_boxes: bool = False,
         only_terminal_reward: bool = True,
     ) -> None:
-        """Initialize the environment.
+        """инициализация среды.
 
-         Parameters
+         параметры:
         ----------:
-            container_size: size of the container in the form [lx,ly,lz]
-            box_sizes: sizes of boxes to be placed in the container in the form [[lx,ly,lz],...]
-            num_visible_boxes: number of boxes visible to the agent
+            container_size: размер уонтейнера в виде [lx,ly,lz]
+            box_sizes: размеры загружаемых коробок в виде [[lx,ly,lz],...]
+            num_visible_boxes: количество видимых коробок для агента
         """
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
-        # This flag determines if the boxes are randomly generated everytime the environment is reset
+        # Этот пункт определяет, генерируются ли поля случайным образом при каждом сбросе среды
         self.random_boxes = random_boxes
-        # This flag determines if the reward is only given at the end of the episode
+        # Этот пункт определяет выдачу награды
         self.only_terminal_reward = only_terminal_reward
 
-        # TO DO: Add parameter check box area
+        # TO DO: Добавить параметр для проверки плошади коробок
         assert num_visible_boxes <= len(box_sizes)
         self.container = Container(container_size)
-        # The initial list of all boxes that should be placed in the container.
+        # Первоначальный список всех ящиков, которые должны быть помещены в контейнер.
 
         self.initial_boxes = [
             Box(box_size, position=[-1, -1, -1], id_=index)
@@ -116,49 +103,49 @@ class PackingEnv(gym.Env):
 
         self.num_initial_boxes = len(self.initial_boxes)
 
-        # The list of boxes that are not yet packed and not visible to the agent
+        # Список коробок, которые еще не упакованы и не видны агенту
         self.unpacked_hidden_boxes = self.initial_boxes.copy()
-        # The list of boxes that are already packed
+        # Список коробок, которые уже упакованы
         self.packed_boxes = []
-        # The list of boxes that could not be packed (did not fit in the container)
+        # Список коробок, которые могли бы быть упакованы, но не поместились
         self.skipped_boxes = []
 
-        # The number and list of boxes that are not yet packed and are visible to the agent
+        # Список и количество коробок, которые еще не упакованы и видны агенту
         self.num_visible_boxes = num_visible_boxes
         self.unpacked_visible_boxes = []
         self.state = {}
         self.done = False
 
-        # Array to define the MultiDiscrete space with the list of sizes of the visible boxes
-        # The upper bound for the entries in MultiDiscrete space is not inclusive -- we add 1 to each coordinate
+        # Массив для определения мультидискретного пространства со списком размеров видимых полей
+        # Верхняя граница для записей в мультидискретном пространстве не является включающей - мы добавляем 1 к каждой координате
         box_repr = np.zeros(shape=(num_visible_boxes, 3), dtype=np.int32)
         box_repr[:] = self.container.size + [1, 1, 1]
-        # Reshape the list of sizes of the visible boxes to a 1D array
+        # Преобразуйте список размеров видимых блоков в одномерный массив
         box_repr = np.reshape(box_repr, newshape=(num_visible_boxes * 3,))
 
-        # Array to define the MultiDiscrete space with the height map of the container
+        # Массив для определения мультидискретного пространства с картой высот контейнера
         height_map_repr = np.ones(
             shape=(container_size[0], container_size[1]), dtype=np.int32
         ) * (container_size[2] + 1)
-        # Reshape the height map to a 1D array
+        # Преобразование карты высот в одномерный массив
         height_map_repr = np.reshape(
             height_map_repr, newshape=(container_size[0] * container_size[1],)
         )
 
-        # Dict to define the observation space
+        # Словарь, чтобы определить пространство наблюдения
         observation_dict = {
             "height_map": MultiDiscrete(height_map_repr),
             "visible_box_sizes": MultiDiscrete(box_repr),
         }
 
-        # Observation space
+        # пространство наблюдения
         self.observation_space = gym.spaces.Dict(observation_dict)
-        # Action space
+        # пространство действий
         self.action_space = Discrete(
             container_size[0] * container_size[1] * num_visible_boxes
         )
 
-        # Set the initial action_mask to a zero array
+        # задаем начальную action_mask как нулевой массив
         self.action_mask = np.zeros(
             shape=(
                 self.container.size[0]
@@ -169,28 +156,29 @@ class PackingEnv(gym.Env):
         )
 
     def seed(self, seed: int = 42):
-        """Seed the random number generator for the environment.
-        Parameters
+        """Запуск генератора случайных чисел для среды.
+        Параметры
         -----------
             seed: int
-                Seed for the environment.
+            seed для окружающей среды.
         """
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
     def action_to_position(self, action: int) -> Tuple[int, NDArray]:
-        """Converts an index to a tuple with a box index
-        and a position in the container.
-        Parameters
+        """Преобразует индекс в кортеж с индексом ячейки
+        и позицией в контейнере.
+        Параметры
         ----------
-            action: int
-                Index to be converted.
-        Returns
+            action:
+            индекс int, подлежащий преобразованию.
+        
+        Возвращается
         -------
-            box_index: int
-                Index of the box to be placed.
-            position: ndarray
-                Position in the container.
+            box_index: внутренний
+                индекс коробки, которая будет упакована.
+            позиция: ndarray
+                Позиция в контейнере.
         """
         box_index = action // (self.container.size[0] * self.container.size[1])
         res = action % (self.container.size[0] * self.container.size[1])
@@ -202,11 +190,11 @@ class PackingEnv(gym.Env):
         return box_index, position.astype(np.int32)
 
     def position_to_action(self, position, box_index=0):
-        """Converts a position in the container to an action index
-        Returns
+        """Преобразует позицию в контейнере в индекс действия
+        Возвращается
         -------
-            action: int
-                Index in the container.
+            действие:
+            индекс в контейнере.
         """
         action = (
             box_index * self.container.size[0] * self.container.size[1]
@@ -216,16 +204,16 @@ class PackingEnv(gym.Env):
         return action
 
     def reset(self, seed=None, options=None) -> Tuple:
-        """Reset the environment.
-        Parameters
+        """Сброс среды.
+        Параметры
         ----------
             seed: int
-                Seed for the environment.
+                Начальное значение для среды.
             options: dict
-                Options for the environment.
-        Returns
+                Параметры для среды.
+        Возвращается
         ----------
-            obs, info: Tuple with the initial state and a dictionary with information of the environment.
+            obs, info: кортеж с начальным состоянием и словарь с информацией об окружающей среде.
         """
 
         self.container.reset()
@@ -239,29 +227,29 @@ class PackingEnv(gym.Env):
                 for index, box_size in enumerate(box_sizes)
             ]
 
-        # Reset the list of boxes that are not yet packed and not visible to the agent
+        # Сброс списка коробок, которые еще не упакованы и не видны агенту
         self.unpacked_hidden_boxes = copy.deepcopy(self.initial_boxes)
 
-        # Reset the list of boxes visible to the agent and deletes them from the list of
-        # hidden unpacked boxes to be packed
+        # Сброс списока коробок, видимых агенту, и удаление их из списка
+        # скрытых не упакованных коробок, подлежащих упаковке
         self.unpacked_visible_boxes = copy.deepcopy(
             self.unpacked_hidden_boxes[0 : self.num_visible_boxes]
         )
         del self.unpacked_hidden_boxes[0 : self.num_visible_boxes]
 
-        # Reset the list of boxes that are already packed
+        # Сброс упакованных коробок
         self.packed_boxes = self.container.boxes
 
-        # Set the list of visible box sizes in the observation space
+        # Установка списка видимых размеров коробки в области наблюдения
         visible_box_sizes = np.asarray(
             [box.size for box in self.unpacked_visible_boxes]
         )
 
-        # Reset the state of the environment
+        # Сброс состояния среды
         hm = np.asarray(self.container.height_map, dtype=np.int32)
         hm = np.reshape(hm, (self.container.size[0] * self.container.size[1],))
 
-        # Set the initial blank action_mask
+        # Установка начальной пустой маски action_mask
         self.action_mask = self.action_masks
 
         vbs = np.reshape(visible_box_sizes, (self.num_visible_boxes * 3,))
@@ -273,16 +261,16 @@ class PackingEnv(gym.Env):
         return self.state
 
     def calculate_reward(self, reward_type: str = "terminal_step") -> float:
-        """calculate the reward for the action.
-        Returns:
+        """рассчитфвает вознаграждение за совершенное действие.
+        Возвращается:
         ----------
-            reward: Reward for the action.
+            награда: Вознаграждение за совершенное действие.
         """
-        # Volume of packed boxes
+        # Объем упакованных коробок
         packed_volume = np.sum([box.volume for box in self.packed_boxes])
 
         if reward_type == "terminal_step":
-            # Reward for the terminal step
+            # Вознаграждение за последний шаг
             container_volume = self.container.volume
             reward = packed_volume / container_volume
         elif reward_type == "interm_step":
@@ -293,7 +281,7 @@ class PackingEnv(gym.Env):
             max_y = max([box.position[1] + box.size[1] for box in self.packed_boxes])
             max_z = max([box.position[2] + box.size[2] for box in self.packed_boxes])
 
-            # Reward for the intermediate step
+            # Вознаграждение за промежуточный шаг
             reward = packed_volume / (
                 (max_x - min_x) * (max_y - min_y) * (max_z - min_z)
             )
@@ -303,33 +291,33 @@ class PackingEnv(gym.Env):
         return reward
 
     def step(self, action: int) -> Tuple[NDArray, float, bool, dict]:
-        """Step the environment.
-        Parameters:
+        """Шаг.
+        Параметры:
         -----------
-            action: integer with the action to be taken.
-        Returns:
+            action: целое число с указанием действия, которое необходимо выполнить.
+        Возвращается:
         ----------
-            observation: Dictionary with the observation of the environment.
-            reward: Reward for the action.
-            terminated: Whether the episode is terminated.
-            info: Dictionary with additional information.
+            observation: Словарь с наблюдением среды.
+            reward: Вознаграждение за действие.
+            terminated: Завершается ли эпоха.
+            info: Словарь с дополнительной информацией.
         """
 
-        # Get the index and position of the box to be placed in the container
+        # Получаем индекс и положение коробки, которая будет упакована в контейнер
         box_index, position = self.action_to_position(action)
-        # if the box is a dummy box, skip the step
+        # если коробка является dummy, пропустить этот шаг
         if box_index >= len(self.unpacked_visible_boxes):
             return self.state, 0, self.done, {}
 
-        # If it is not a dummy box, check if the action is valid
-        # TO DO: add parameter check area, add info, return info
+        # Если коробка не является dummy, проверяем, допустимо ли действие
+        # TO DO: добавить область проверки параметров, добавить информацию, вернуть информацию
         if (
             self.container.check_valid_box_placement(
                 self.unpacked_visible_boxes[box_index], position, check_area=100
             )
             == 1
         ):
-            # Place the box in the container and delete it from the list of unpacked visible boxes
+            # Помещаем коробку в контейнер и удаляем ее из списка неупакованных видимых коробок
             if self.num_visible_boxes > 1:
                 self.container.place_box(
                     self.unpacked_visible_boxes.pop(box_index), position
@@ -337,29 +325,29 @@ class PackingEnv(gym.Env):
             else:
                 self.container.place_box(self.unpacked_visible_boxes[0], position)
                 self.unpacked_visible_boxes = []
-            # Update the height map, reshapes it and adds it to the observation space
+            # Обновление карты высот, изменение ее формы, добавление в пространство наблюдения
             self.state["height_map"] = np.reshape(
                 self.container.height_map,
                 (self.container.size[0] * self.container.size[1],),
             )
-            # Update the list of packed boxes
+            # Обновления списка упакованных коробок
             self.packed_boxes = self.container.boxes
-            # set reward
+            # установка вознаграждения
             if self.only_terminal_reward:
                 reward = 0
             else:
                 reward = self.calculate_reward(reward_type="interm_step")
 
-            # If the action is not valid, remove the box and add it to skipped boxes
+            # Если действие неприемлимо, отправляем коробку в список пропущенных
         else:
             self.skipped_boxes.append(self.unpacked_visible_boxes.pop(box_index))
             reward = 0
 
-        # Update the list of visible boxes if possible
+        # Обновление списка неупакованных скрытых коробок
         if len(self.unpacked_hidden_boxes) > 0:
             self.unpacked_visible_boxes.append(self.unpacked_hidden_boxes.pop(0))
 
-        # If there are no more boxes to be packed, finish the episode
+        # Если коробок для упаковки не осталось, то завершаем эпоху
         if len(self.unpacked_visible_boxes) == 0:
             self.done = True
             terminated = self.done
@@ -368,7 +356,7 @@ class PackingEnv(gym.Env):
             return self.state, reward, terminated, {}
 
         if len(self.unpacked_visible_boxes) == self.num_visible_boxes:
-            # Update the list of visible box sizes in the observation space
+            # Обновление списка видымых коробок в пространстве наблюдений
             visible_box_sizes = np.asarray(
                 [box.size for box in self.unpacked_visible_boxes]
             )
@@ -380,7 +368,7 @@ class PackingEnv(gym.Env):
             return self.state, reward, terminated, {}
 
         if len(self.unpacked_visible_boxes) < self.num_visible_boxes:
-            # If there are fewer boxes than the maximum number of visible boxes, add dummy boxes
+            # Если коробок меньше, чем максимальное количество видимых коробок, то добавляем dummy коробки
             dummy_box_size = self.container.size
             num_dummy_boxes = self.num_visible_boxes - len(self.unpacked_visible_boxes)
             box_size_list = [box.size for box in self.unpacked_visible_boxes] + [
@@ -395,11 +383,11 @@ class PackingEnv(gym.Env):
 
     # @property
     def action_masks(self) -> List[bool]:
-        """Get the action mask from the env.
-          Parameters
-        Returns
+        """Получите маску действия из среды.
+          Параметры
+        Возвращается
         ----------
-            np.ndarray: Array with the action mask."""
+            np.ndarray: массив с маской действия."""
         act_mask = np.zeros(
             shape=(
                 self.num_visible_boxes,
@@ -419,9 +407,9 @@ class PackingEnv(gym.Env):
 
     def render(self, mode=None) -> Union[go.Figure, NDArray]:
 
-        """Render the environment.
-        Args:
-            mode: Mode to render the environment.
+        """Рендер среды.
+        Аргументы:
+            mode: Режим для рендера.
         """
 
         if mode is None:
@@ -444,7 +432,7 @@ class PackingEnv(gym.Env):
             raise NotImplementedError
 
     def close(self) -> None:
-        """Close the environment."""
+        """Закоытие среды."""
         pass
 
 
@@ -454,10 +442,10 @@ if __name__ == "__main__":
     import warnings
     from plotly_gif import GIF
 
-    # Ignore plotly and gym deprecation warnings
+    # Игнорируем plotly и gym предупреждения
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    # Environment initialization
+    # Инициализация среды
     env = make(
         "PackingEnv-v0",
         container_size=[10, 10, 10],
