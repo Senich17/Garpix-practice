@@ -85,6 +85,8 @@ Contains study project based on https://github.com/luisgarciar/3D-bin-packing
 
 `
 cd 3D-bin-packing
+`
+`
 pip install -r requirements.txt
 `
 
