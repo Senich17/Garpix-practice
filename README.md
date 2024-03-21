@@ -83,8 +83,10 @@ Contains study project based on https://github.com/luisgarciar/3D-bin-packing
 
 Чтобы запустить код, необходимо установить зависимосьти
 
-""" cd 3D-bin-packing """
-""" pip install -r requirements.txt """
+'''
+cd 3D-bin-packing
+pip install -r requirements.txt
+'''
 
 # Документация
 
